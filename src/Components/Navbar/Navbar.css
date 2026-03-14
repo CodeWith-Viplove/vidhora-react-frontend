@@ -1,0 +1,199 @@
+.premium-navbar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1400px;
+  max-width: 95vw;
+  z-index: 1000;
+  height: 80px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px !important;
+  background: rgba(10, 15, 30, 0.75) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px;
+  line-height: normal !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-navbar.scrolled {
+  top: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 75px;
+  border-radius: 0;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  padding: 0 5% !important;
+  background: rgba(10, 15, 30, 0.95) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.logo-text {
+  font-family: 'Google Sans Flex', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #1e4ed8;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e4ed8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(30, 78, 216, 0.2);
+}
+
+.navbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-links span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  letter-spacing: 0.3px;
+}
+
+.nav-links span:hover {
+  color: #3b82f6;
+}
+
+.nav-links span::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #1e4ed8);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.nav-links span:hover::after {
+  width: 100%;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-login-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  transition: all 0.3s ease !important;
+  padding: 0 16px !important;
+}
+
+.navbar-login-btn:hover {
+  color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.navbar-cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e4ed8 100%) !important;
+  border: none !important;
+  color: white !important;
+  height: 46px !important;
+  padding: 0 28px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  box-shadow: 0 4px 15px rgba(30, 78, 216, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.navbar-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(30, 78, 216, 0.4);
+}
+
+.navbar-cta-app {
+  background: white !important;
+  border: 2px solid #1d4ed8 !important;
+  color: #1d4ed8 !important;
+  height: 44px !important;
+  padding: 0 24px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+}
+
+.navbar-cta-app:hover {
+  background: rgba(29, 78, 216, 0.05) !important;
+}
+
+/* Dashboard mode */
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 64px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f0f1f2 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  line-height: normal !important;
+}
+
+.logo-text-app {
+  font-family: 'Google Sans Flex', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.navbar-avatar-app {
+  background-color: #1d4ed8 !important;
+}
+
+@media (max-width: 768px) {
+  .premium-navbar {
+    padding: 0 2rem !important;
+  }
+
+  .navbar-center {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .logo-text {
+    display: none;
+  }
+}
