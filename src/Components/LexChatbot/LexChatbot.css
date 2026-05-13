@@ -134,3 +134,7 @@
     transform: scale(1);
   }
 }
+
+.history-list-item:hover {
+  background-color: #f1f5f9 !important;
+}

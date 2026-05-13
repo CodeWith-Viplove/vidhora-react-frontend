@@ -305,6 +305,11 @@ const JudgementSimplifier = () => {
 
   const uploadProps = {
     beforeUpload: (file) => {
+      const isLt4M = file.size / 1024 / 1024 < 4;
+      if (!isLt4M) {
+        toast.error(`File size cannot exceed 4MB. Please upload a smaller file.`);
+        return Upload.LIST_IGNORE;
+      }
       setFile(file);
       setInputText("");
       setWordCount(0);
@@ -492,7 +497,7 @@ const JudgementSimplifier = () => {
                       : "Click or drag file to upload"}
                   </p>
                   <p className="ant-upload-hint" style={{ fontSize: 13 }}>
-                    Supports PDF, TXT, DOC, DOCX (Max 10MB)
+                    Supports PDF, TXT, DOC, DOCX (Max 4MB)
                   </p>
                 </Upload.Dragger>
               </div>
@@ -612,14 +617,14 @@ const JudgementSimplifier = () => {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left' }} {...props} />,
-                      h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left' }} {...props} />,
-                      h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', marginTop: '16px', marginBottom: '8px', marginLeft: '0px', paddingLeft: '0px' }} {...props} />,
-                      h4: ({ node, ...props }) => <h4 style={{ textAlign: 'left' }} {...props} />,
-                      p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginTop: '4px', marginBottom: '8px' }} {...props} />,
-                      ul: ({ node, ...props }) => <ul style={{ marginLeft: '20px', paddingLeft: '0px' }} {...props} />,
-                      ol: ({ node, ...props }) => <ol style={{ marginLeft: '20px', paddingLeft: '0px' }} {...props} />,
-                      li: ({ node, ...props }) => <li style={{ marginBottom: '4px', paddingLeft: '0px' }} {...props} />,
+                      h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left', fontSize: '18px', fontWeight: 600, marginTop: '16px', marginBottom: '12px', color: '#1e293b' }} {...props} />,
+                      h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left', fontSize: '16px', fontWeight: 600, marginTop: '14px', marginBottom: '10px', color: '#1e293b' }} {...props} />,
+                      h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', fontSize: '15px', fontWeight: 600, marginTop: '12px', marginBottom: '8px', color: '#1e293b' }} {...props} />,
+                      h4: ({ node, ...props }) => <h4 style={{ textAlign: 'left', fontSize: '14px', fontWeight: 600, marginTop: '10px', marginBottom: '6px', color: '#1e293b' }} {...props} />,
+                      p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginTop: '4px', marginBottom: '8px', color: '#334155' }} {...props} />,
+                      ul: ({ node, ...props }) => <ul style={{ marginLeft: '20px', paddingLeft: '0px', color: '#334155' }} {...props} />,
+                      ol: ({ node, ...props }) => <ol style={{ marginLeft: '20px', paddingLeft: '0px', color: '#334155' }} {...props} />,
+                      li: ({ node, ...props }) => <li style={{ marginBottom: '4px', paddingLeft: '0px', color: '#334155' }} {...props} />,
                     }}
                     style={{
                       fontSize: 15,

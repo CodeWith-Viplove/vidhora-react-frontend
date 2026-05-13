@@ -320,6 +320,11 @@ const LawSimplifier = () => {
 
   const uploadProps = {
     beforeUpload: (file) => {
+      const isLt4M = file.size / 1024 / 1024 < 4;
+      if (!isLt4M) {
+        toast.error(`File size cannot exceed 4MB. Please upload a smaller file.`);
+        return Upload.LIST_IGNORE;
+      }
       setFile(file);
       setInputText("");
       setWordCount(0);
@@ -505,7 +510,7 @@ const LawSimplifier = () => {
                       : "Click or drag file to upload"}
                   </p>
                   <p className="ant-upload-hint" style={{ fontSize: 13 }}>
-                    Supports PDF, TXT, DOC, DOCX (Max 10MB)
+                    Supports PDF, TXT, DOC, DOCX (Max 4MB)
                   </p>
                 </Upload.Dragger>
               </div>
