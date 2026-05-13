@@ -4,6 +4,7 @@ import {
   PaperClipOutlined,
   UserOutlined,
   DeleteOutlined,
+  HistoryOutlined
 } from "@ant-design/icons";
 import {
   Card,
@@ -18,9 +19,30 @@ import {
   Col,
   Divider,
   message,
+  Drawer,
+  List,
+  Collapse,
+  Spin,
+  Skeleton
 } from "antd";
+
+const formatDateLabel = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  const today = new Date();
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  const diffTime = Math.abs(todayDateOnly - date);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: "long" });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+};
 import { Scale } from "lucide-react";
-import { sendChat, getLawQuestionSuggestions } from "../../api_services/chatAPI";
+import { sendChat, getLawQuestionSuggestions, fetchChatHistory } from "../../api_services/chatAPI";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./LexChatbot.css";
@@ -28,22 +50,39 @@ import "./LexChatbot.css";
 const { Paragraph, Text, Title } = Typography;
 
 const LexChatbot = () => {
-  const [messages, setMessages] = useState([
-    {
-      text: "Hello! I'm VIDHORA, your AI legal assistant. How can I help you today?",
-      sender: "bot",
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ]);
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem("chatMessages");
+    if (savedMessages) {
+      try {
+        return JSON.parse(savedMessages);
+      } catch (e) {
+        console.error("Error parsing saved messages", e);
+      }
+    }
+    return [
+      {
+        text: "Hello! I'm VIDHORA, your AI legal assistant. How can I help you today?",
+        sender: "bot",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+  }, [messages]);
   const [inputText, setInputText] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [chatHistory, setChatHistory] = useState({});
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const chatHistoryRef = useRef(null);
 
   useEffect(() => {
@@ -134,12 +173,28 @@ const LexChatbot = () => {
     setIsTyping(true);
 
     try {
-      const reply = await sendChat({
+      const userInfoStr = localStorage.getItem("userInfo");
+      let userId = null;
+      if (userInfoStr) {
+        userId = JSON.parse(userInfoStr).id;
+      } else {
+        userId = localStorage.getItem("user_id");
+      }
+
+      const currentSessionId = localStorage.getItem("chatSessionId");
+
+      const response = await sendChat({
         message: messageToSend || undefined,
         file: fileToSend || undefined,
+        userId: userId,
+        sessionId: currentSessionId
       });
 
-      let cleanedReply = reply || "No reply received from Vidhora.";
+      if (response.sessionId) {
+        localStorage.setItem("chatSessionId", response.sessionId);
+      }
+
+      let cleanedReply = response.reply || "No reply received from Vidhora.";
 
       setMessages((prev) => [
         ...prev,
@@ -168,6 +223,7 @@ const LexChatbot = () => {
   };
 
   const handleClearChat = () => {
+    localStorage.removeItem("chatSessionId");
     setMessages([
       {
         text: "Hello! I'm VIDHORA your AI legal assistant. How can I help you today?",
@@ -179,6 +235,54 @@ const LexChatbot = () => {
       },
     ]);
     message.info("Chat cleared");
+  };
+
+  const showHistory = async () => {
+    setIsHistoryVisible(true);
+    setIsLoadingHistory(true);
+    try {
+      const userInfoStr = localStorage.getItem("userInfo");
+      let userId = null;
+      if (userInfoStr) {
+        userId = JSON.parse(userInfoStr).id;
+      } else {
+        userId = localStorage.getItem("user_id");
+      }
+
+      if (!userId) {
+        message.error("User ID not found");
+        setIsLoadingHistory(false);
+        return;
+      }
+
+      const data = await fetchChatHistory(userId);
+      setChatHistory(data.history || {});
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to load history");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const loadSession = (session) => {
+    localStorage.setItem("chatSessionId", session.sessionId);
+    const loadedMessages = [];
+    session.conversations.forEach(conv => {
+      loadedMessages.push({
+        text: conv.query,
+        sender: "user",
+        time: new Date(conv.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      });
+      loadedMessages.push({
+        text: conv.response,
+        sender: "bot",
+        time: new Date(conv.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      });
+    });
+    setMessages(loadedMessages);
+    setIsHistoryVisible(false);
+    message.success("Chat session loaded");
   };
 
   return (
@@ -235,15 +339,24 @@ const LexChatbot = () => {
                 </Text>
               </div>
             </Space>
-            <Button
-              danger
-              type="text"
-              icon={<DeleteOutlined />}
-              onClick={handleClearChat}
-            // style={{ marginRight: 72 }} // offset so it doesn't sit under floating user avatar
-            >
-              Clear Chat
-            </Button>
+            <Space>
+              <Button
+                type="default"
+                icon={<HistoryOutlined />}
+                onClick={showHistory}
+              >
+                History
+              </Button>
+              <Button
+                danger
+                type="text"
+                icon={<DeleteOutlined />}
+                onClick={handleClearChat}
+                style={{ backgroundColor: "#fff1f0", color: "#ff4d4f" }}
+              >
+                Clear Chat
+              </Button>
+            </Space>
           </Row>
         </div>
 
@@ -485,6 +598,60 @@ const LexChatbot = () => {
           </div>
         </div>
       </Card>
+
+      <Drawer
+        title="Chat History"
+        placement="right"
+        onClose={() => setIsHistoryVisible(false)}
+        open={isHistoryVisible}
+        width={350}
+      >
+        {isLoadingHistory ? (
+          <div style={{ padding: "16px 8px" }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} style={{ marginBottom: 24 }}>
+                <Skeleton.Input active size="small" style={{ width: 80, height: 16, marginBottom: 16 }} />
+                <Skeleton active paragraph={{ rows: 1, width: ['100%'] }} title={{ width: '80%' }} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: "8px" }}>
+            {Object.keys(chatHistory).sort((a, b) => new Date(b) - new Date(a)).map(date => {
+              const dayData = chatHistory[date];
+              return (
+                <div key={date} style={{ marginBottom: "24px" }}>
+                  <Text type="secondary" strong style={{ fontSize: "12px", marginLeft: "8px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b" }}>
+                    {formatDateLabel(date)}
+                  </Text>
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={dayData.sessions}
+                    style={{ marginTop: "8px" }}
+                    renderItem={(session) => (
+                      <List.Item
+                        style={{ cursor: "pointer", padding: "10px 12px", borderRadius: "8px", transition: "all 0.2s", borderBottom: "none" }}
+                        className="history-list-item"
+                        onClick={() => loadSession(session)}
+                      >
+                        <List.Item.Meta
+                          title={<Text ellipsis style={{ fontSize: "14px", color: "#334155", fontWeight: 500, display: "block", maxWidth: 280 }}>{session.title || "New Conversation"}</Text>}
+                          description={<Text type="secondary" ellipsis style={{ fontSize: "12px", display: "block", maxWidth: 280 }}>{session.lastMessage}</Text>}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              );
+            })}
+            {Object.keys(chatHistory).length === 0 && (
+              <Text type="secondary" style={{ display: "block", textAlign: "center", marginTop: "40px" }}>
+                No chat history found.
+              </Text>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 };

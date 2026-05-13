@@ -97,7 +97,7 @@ const cleanReply = (raw) => {
 //   - message (string, required)
 //   - file (PDF file, optional)
 // Returns: reply text from backend (may contain markdown)
-export const sendChat = async ({ message, file }) => {
+export const sendChat = async ({ message, file, userId, sessionId }) => {
   if (!message && !file) {
     throw new Error("Message or file is required");
   }
@@ -110,6 +110,14 @@ export const sendChat = async ({ message, file }) => {
 
   if (file) {
     formData.append("file", file);
+  }
+
+  if (userId) {
+    formData.append("userId", userId);
+  }
+
+  if (sessionId) {
+    formData.append("sessionId", sessionId);
   }
 
   const authToken = localStorage.getItem("authToken");
@@ -129,10 +137,31 @@ export const sendChat = async ({ message, file }) => {
   }
 
   if (typeof data.reply === "string") {
-    return cleanReply(data.reply);
+    return {
+      reply: cleanReply(data.reply),
+      sessionId: data.sessionId
+    };
   }
 
   throw new Error("Invalid response from chat server");
+};
+
+export const fetchChatHistory = async (userId) => {
+  const authToken = localStorage.getItem("authToken");
+  const response = await fetch(`${base_url}/api/chat/history/${userId}`, {
+    method: "GET",
+    headers: {
+      "Authorization": authToken ? `Bearer ${authToken}` : "",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || "Failed to fetch chat history");
+  }
+
+  return data;
 };
 
 // Chat API: get law question suggestions
