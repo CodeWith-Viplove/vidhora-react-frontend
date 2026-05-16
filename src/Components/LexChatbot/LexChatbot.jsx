@@ -4,7 +4,9 @@ import {
   PaperClipOutlined,
   UserOutlined,
   DeleteOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  SolutionOutlined,
+  ThunderboltOutlined
 } from "@ant-design/icons";
 import {
   Card,
@@ -23,7 +25,9 @@ import {
   List,
   Collapse,
   Spin,
-  Skeleton
+  Skeleton,
+  Tooltip,
+  Badge
 } from "antd";
 
 const formatDateLabel = (dateStr) => {
@@ -202,6 +206,8 @@ const LexChatbot = () => {
           text: cleanedReply,
           sender: "bot",
           isStreaming: true,
+          confidence_score: response.hallucinationScore ? parseFloat(response.hallucinationScore) / 100 : null,
+          type: response.intent || response.confidenceType,
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -365,12 +371,12 @@ const LexChatbot = () => {
           ref={chatHistoryRef}
           style={{
             flex: 1,
-            padding: "24px",
+            padding: "16px 20px",
             overflowY: "auto",
             background: "#f8fafc",
           }}
         >
-          <Space direction="vertical" size={18} style={{ width: "100%" }}>
+          <Space direction="vertical" size={12} style={{ width: "100%" }}>
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -416,73 +422,27 @@ const LexChatbot = () => {
                           : "0 4px 12px rgba(15, 23, 42, 0.08)",
                       textAlign: "left", // ensure markdown text is left aligned
                     }}
-                    bodyStyle={{ padding: "12px 16px" }}
+                    styles={{ body: { padding: "12px 16px" } }}
                   >
                     {msg.sender === "bot" ? (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          h3: ({ node, ...props }) => (
-                            <h3
-                              style={{
-                                marginTop: "16px",
-                                marginBottom: "8px",
-                                marginLeft: "0px",
-                                paddingLeft: "0px",
-                                textAlign: "left",
-                                color: "#0f172a",
-                              }}
-                              {...props}
-                            />
-                          ),
-                          p: ({ node, ...props }) => (
-                            <p
-                              style={{
-                                marginBottom: 0,
-                                marginTop: 0,
-                                textAlign: "left",
-                                color: "#0f172a",
-                              }}
-                              {...props}
-                            />
-                          ),
-                          ul: ({ node, ...props }) => (
-                            <ul
-                              style={{
-                                marginLeft: "20px",
-                                paddingLeft: "0px",
-                              }}
-                              {...props}
-                            />
-                          ),
-                          ol: ({ node, ...props }) => (
-                            <ol
-                              style={{
-                                marginLeft: "20px",
-                                paddingLeft: "0px",
-                              }}
-                              {...props}
-                            />
-                          ),
-                          li: ({ node, ...props }) => (
-                            <li
-                              style={{
-                                marginBottom: "4px",
-                                paddingLeft: "0px",
-                              }}
-                              {...props}
-                            />
-                          ),
-                        }}
-                        style={{
-                          fontSize: 15,
-                          lineHeight: 1.5715,
-                          margin: 0,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {msg.isStreaming ? streamingText : msg.text}
-                      </ReactMarkdown>
+                      <div className="chat-markdown">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({node, ...props}) => <h3 className="chat-md-h1" {...props} />,
+                            h2: ({node, ...props}) => <h4 className="chat-md-h2" {...props} />,
+                            h3: ({node, ...props}) => <h5 className="chat-md-h3" {...props} />,
+                            strong: ({node, ...props}) => <strong className="chat-md-strong" {...props} />,
+                            code: ({node, inline, ...props}) => (
+                              inline 
+                                ? <code className="chat-md-code-inline" {...props} />
+                                : <pre className="chat-md-pre"><code {...props} /></pre>
+                            )
+                          }}
+                        >
+                          {msg.isStreaming ? streamingText : msg.text}
+                        </ReactMarkdown>
+                      </div>
                     ) : (
                       <Paragraph
                         style={{
@@ -496,6 +456,8 @@ const LexChatbot = () => {
                         {msg.text}
                       </Paragraph>
                     )}
+
+
                   </Card>
                   <Text
                     type="secondary"

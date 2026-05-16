@@ -83,8 +83,18 @@ const cleanReply = (raw) => {
   }
 
   // 4) Final cleanup: 
-  // - Remove leading stray asterisks often left behind by markdown headers
+  // - Convert setext headings "**Title**\n======" → "## Title"
+  // - Strip trailing ** leaked at end of any line
+  // - Remove leading stray * or **
   // - Remove redundant empty lines
+
+  // Convert setext-style "**Title**\n======" into "## Title"
+  text = text.replace(/\*\*(.+?)\*\*\s*\n[=\-]{2,}/g, (_, title) => `## ${title}`);
+
+  // Strip trailing ** at the end of ANY line (global + multiline)
+  text = text.replace(/\*{1,2}\s*$/gm, "");
+
+  // Strip leading stray * or **
   text = text.replace(/^(\*\*|\*)\s*\n*/, "");
   text = text.replace(/\n{3,}/g, "\n\n").trim();
 
@@ -138,8 +148,8 @@ export const sendChat = async ({ message, file, userId, sessionId }) => {
 
   if (typeof data.reply === "string") {
     return {
-      reply: cleanReply(data.reply),
-      sessionId: data.sessionId
+      ...data,
+      reply: cleanReply(data.reply)
     };
   }
 
