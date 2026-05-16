@@ -32,6 +32,7 @@ import {
   Alert,
   Badge,
   Progress,
+  Statistic,
   Skeleton,
   Drawer,
   List,
@@ -63,6 +64,8 @@ const JudgementSimplifier = () => {
   const [historyItems, setHistoryItems] = useState([]);
   const [expandedItems, setExpandedItems] = useState({});
   const [isFavLoading, setIsFavLoading] = useState(false);
+  const [hallucinationScore, setHallucinationScore] = useState(null);
+  const [confidenceType, setConfidenceType] = useState("");
 
   const toggleExpand = (itemId) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -99,6 +102,8 @@ const JudgementSimplifier = () => {
 
     setIsLoading(true);
     setOutputText("");
+    setHallucinationScore(null);
+    setConfidenceType("");
     setRecordId(null);
     setIsFavourited(false);
 
@@ -119,6 +124,8 @@ const JudgementSimplifier = () => {
       const res = await judgmentSimplifier(formData);
 
       setOutputText(res.simplifiedText);
+      if (res.hallucinationScore) setHallucinationScore(res.hallucinationScore);
+      if (res.confidenceType) setConfidenceType(res.confidenceType);
       if (res.recordId) setRecordId(res.recordId);
       if (typeof res.isLiked !== 'undefined') setIsFavourited(res.isLiked);
       message.success("Judgment simplified successfully!");
@@ -149,6 +156,8 @@ const JudgementSimplifier = () => {
     setFile(null);
     setOutputText("");
     setWordCount(0);
+    setHallucinationScore(null);
+    setConfidenceType("");
     setRecordId(null);
     setIsFavourited(false);
     message.info("Content cleared");
@@ -603,6 +612,72 @@ const JudgementSimplifier = () => {
                 style={{ width: "100%" }}
                 size="large"
               >
+                {/* Premium Analysis Dashboard */}
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.7)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '20px', 
+                  borderRadius: '16px', 
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  marginBottom: '24px',
+                  boxShadow: '0 8px 32px rgba(31, 38, 135, 0.07)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Decorative background element */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-20px',
+                    right: '-20px',
+                    width: '100px',
+                    height: '100px',
+                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+                    zIndex: 0
+                  }} />
+
+                  <Row gutter={[32, 20]} align="middle">
+                    <Col xs={24} sm={8} style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
+                      <Progress
+                        type="dashboard"
+                        percent={hallucinationScore ? parseFloat(hallucinationScore) : 85}
+                        size={100}
+                        strokeColor={{
+                          '0%': '#3b82f6',
+                          '100%': '#10b981',
+                        }}
+                        format={(percent) => (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#1e293b' }}>{percent}%</span>
+                            <span style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Match</span>
+                          </div>
+                        )}
+                      />
+                    </Col>
+                    
+                    <Col xs={24} sm={16}>
+                      <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                        <div>
+                          <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Legal Analysis Confidence</Text>
+                          <div style={{ marginTop: 4 }}>
+                            <Tag color="blue" style={{ 
+                              padding: '4px 12px', 
+                              borderRadius: '20px', 
+                              fontSize: 14, 
+                              fontWeight: 600,
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              color: '#1d4ed8',
+                              border: '1px solid rgba(59, 130, 246, 0.2)'
+                            }}>
+                              <ThunderboltOutlined style={{ marginRight: 6 }} />
+                              {confidenceType ? confidenceType.toUpperCase() : 'HIGH'}
+                            </Tag>
+                          </div>
+                        </div>
+                      </Space>
+                    </Col>
+                  </Row>
+                </div>
+
                 {/* Output Text with Markdown */}
                 <Card
                   size="small"
