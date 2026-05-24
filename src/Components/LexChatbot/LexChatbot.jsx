@@ -6,7 +6,11 @@ import {
   DeleteOutlined,
   HistoryOutlined,
   SolutionOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  InfoCircleOutlined,
+  FilePdfOutlined,
+  FileTextOutlined,
+  FileWordOutlined
 } from "@ant-design/icons";
 import {
   Card,
@@ -58,7 +62,17 @@ const LexChatbot = () => {
     const savedMessages = localStorage.getItem("chatMessages");
     if (savedMessages) {
       try {
-        return JSON.parse(savedMessages);
+        const parsed = JSON.parse(savedMessages);
+        return parsed.map(msg => {
+          if (msg.sender === "user" && msg.text && msg.text.startsWith("📎 ")) {
+            return {
+              ...msg,
+              text: msg.text.substring(2),
+              isFile: true
+            };
+          }
+          return msg;
+        });
       } catch (e) {
         console.error("Error parsing saved messages", e);
       }
@@ -123,19 +137,19 @@ const LexChatbot = () => {
     }
   }, [messages.length]);
 
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      setIsLoadingSuggestions(true);
-      try {
-        const qs = await getLawQuestionSuggestions();
-        setSuggestions(qs || []);
-      } catch (error) {
-        console.error("Failed to fetch law question suggestions", error);
-      } finally {
-        setIsLoadingSuggestions(false);
-      }
-    };
+  const fetchSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const qs = await getLawQuestionSuggestions();
+      setSuggestions(qs || []);
+    } catch (error) {
+      console.error("Failed to fetch law question suggestions", error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSuggestions();
   }, []);
 
@@ -144,6 +158,9 @@ const LexChatbot = () => {
     
     if (!textToProcess.trim() && !attachedFile) return;
     if (isTyping) return; // avoid multiple sends while waiting for reply
+
+    // Hide suggested questions once conversation starts
+    setSuggestions([]);
 
     const time = new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -156,13 +173,13 @@ const LexChatbot = () => {
 
     if (fileToSend) {
       newUserMessages.push({
-        text: `📎 ${fileToSend.name}`,
+        text: messageToSend || "",
+        isFile: true,
+        fileName: fileToSend.name,
         sender: "user",
         time,
       });
-    }
-
-    if (messageToSend) {
+    } else if (messageToSend) {
       newUserMessages.push({
         text: messageToSend,
         sender: "user",
@@ -206,6 +223,8 @@ const LexChatbot = () => {
           text: cleanedReply,
           sender: "bot",
           isStreaming: true,
+          bertScore: response.bertScore,
+          hallucinationScore: response.hallucinationScore,
           confidence_score: response.hallucinationScore ? parseFloat(response.hallucinationScore) / 100 : null,
           type: response.intent || response.confidenceType,
           time: new Date().toLocaleTimeString([], {
@@ -240,6 +259,7 @@ const LexChatbot = () => {
         }),
       },
     ]);
+    fetchSuggestions();
     message.info("Chat cleared");
   };
 
@@ -275,14 +295,18 @@ const LexChatbot = () => {
     localStorage.setItem("chatSessionId", session.sessionId);
     const loadedMessages = [];
     session.conversations.forEach(conv => {
+      const isFileQuery = conv.query && conv.query.startsWith("📎 ");
       loadedMessages.push({
-        text: conv.query,
+        text: isFileQuery ? conv.query.substring(2) : conv.query,
+        isFile: isFileQuery,
         sender: "user",
         time: new Date(conv.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       });
       loadedMessages.push({
         text: conv.response,
         sender: "bot",
+        bertScore: conv.bertScore,
+        hallucinationScore: conv.hallucinationScore,
         time: new Date(conv.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       });
     });
@@ -442,6 +466,89 @@ const LexChatbot = () => {
                         >
                           {msg.isStreaming ? streamingText : msg.text}
                         </ReactMarkdown>
+
+                        {/* AI Evaluation Metrics inside Bot response */}
+                        {!msg.isStreaming && (msg.bertScore || msg.hallucinationScore) && (
+                          <div style={{
+                            marginTop: '12px',
+                            paddingTop: '12px',
+                            borderTop: '1px dashed #e2e8f0',
+                            display: 'flex',
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                            alignItems: 'center'
+                          }}>
+                            <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              AI Metrics:
+                            </span>
+                            {msg.bertScore && (
+                              <Tag color="geekblue" style={{ borderRadius: '12px', padding: '2px 8px', fontSize: '11px', border: '1px solid rgba(47, 84, 235, 0.15)', margin: 0 }}>
+                                <ThunderboltOutlined style={{ marginRight: '4px' }} />
+                                BERT Score: <strong>{msg.bertScore}</strong>
+                              </Tag>
+                            )}
+                            {msg.hallucinationScore && (
+                              <Tag color="volcano" style={{ borderRadius: '12px', padding: '2px 8px', fontSize: '11px', border: '1px solid rgba(245, 34, 45, 0.15)', margin: 0 }}>
+                                <InfoCircleOutlined style={{ marginRight: '4px' }} />
+                                Hallucination: <strong>{msg.hallucinationScore}</strong>
+                              </Tag>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : msg.isFile ? (
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        textAlign: "left"
+                      }}>
+                        {/* File Card UI */}
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "4px 0",
+                        }}>
+                          <div style={{
+                            background: "rgba(255, 255, 255, 0.2)",
+                            borderRadius: "8px",
+                            width: "40px",
+                            height: "40px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0
+                          }}>
+                            {(msg.fileName && msg.fileName.toLowerCase().endsWith(".pdf")) || (!msg.fileName && msg.text && msg.text.toLowerCase().endsWith(".pdf")) ? (
+                              <FilePdfOutlined style={{ fontSize: "22px", color: "#ffffff" }} />
+                            ) : (msg.fileName && (msg.fileName.toLowerCase().endsWith(".doc") || msg.fileName.toLowerCase().endsWith(".docx"))) || (!msg.fileName && msg.text && (msg.text.toLowerCase().endsWith(".doc") || msg.text.toLowerCase().endsWith(".docx"))) ? (
+                              <FileWordOutlined style={{ fontSize: "22px", color: "#ffffff" }} />
+                            ) : (
+                              <FileTextOutlined style={{ fontSize: "22px", color: "#ffffff" }} />
+                            )}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                            <Text style={{ margin: 0, color: "#ffffff", fontWeight: 600, fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
+                              {msg.fileName || msg.text}
+                            </Text>
+                            <Text style={{ margin: 0, color: "rgba(255, 255, 255, 0.75)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 500 }}>
+                              Uploaded Document
+                            </Text>
+                          </div>
+                        </div>
+
+                        {/* Combined Text Message underneath if present */}
+                        {msg.fileName && msg.text && (
+                          <div style={{ 
+                            marginTop: "4px", 
+                            color: "#ffffff",
+                            fontSize: "14px",
+                            lineHeight: "1.5"
+                          }}>
+                            {msg.text}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <Paragraph

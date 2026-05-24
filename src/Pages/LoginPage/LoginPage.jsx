@@ -7,6 +7,7 @@ import { message } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { loginUser, registerUser, googleAuth } from '../../api_services/auth';
 import { useAuth } from '../../Context/AuthContext.jsx';
+import vidhoraLogo from '../../assets/logo/vidhora_logo.jpeg';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -215,9 +216,16 @@ const LoginPage = () => {
 
           <div className="logo-section">
             <div className="logo-container">
-              <Scale size={55} className="scale-icon" />
-              {/* <span className="logo-text">JUSTICE</span> */}
-              {/* <span className="logo-text">BRIDGE</span> */}
+              <img 
+                src={vidhoraLogo} 
+                alt="Vidhora Logo" 
+                style={{ 
+                  height: '64px', 
+                  borderRadius: '12px',
+                  objectFit: 'contain',
+                  boxShadow: '0 4px 15px rgba(30, 78, 216, 0.15)'
+                }} 
+              />
             </div>
           </div>
 
