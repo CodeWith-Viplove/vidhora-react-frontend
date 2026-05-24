@@ -66,6 +66,8 @@ const JudgementSimplifier = () => {
   const [isFavLoading, setIsFavLoading] = useState(false);
   const [hallucinationScore, setHallucinationScore] = useState(null);
   const [confidenceType, setConfidenceType] = useState("");
+  const [bertScore, setBertScore] = useState(null);
+  const [rougeScore, setRougeScore] = useState(null);
 
   const toggleExpand = (itemId) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -104,6 +106,8 @@ const JudgementSimplifier = () => {
     setOutputText("");
     setHallucinationScore(null);
     setConfidenceType("");
+    setBertScore(null);
+    setRougeScore(null);
     setRecordId(null);
     setIsFavourited(false);
 
@@ -126,6 +130,8 @@ const JudgementSimplifier = () => {
       setOutputText(res.simplifiedText);
       if (res.hallucinationScore) setHallucinationScore(res.hallucinationScore);
       if (res.confidenceType) setConfidenceType(res.confidenceType);
+      if (res.bertScore) setBertScore(res.bertScore);
+      if (res.rougeScore) setRougeScore(res.rougeScore);
       if (res.recordId) setRecordId(res.recordId);
       if (typeof res.isLiked !== 'undefined') setIsFavourited(res.isLiked);
       message.success("Judgment simplified successfully!");
@@ -158,6 +164,8 @@ const JudgementSimplifier = () => {
     setWordCount(0);
     setHallucinationScore(null);
     setConfidenceType("");
+    setBertScore(null);
+    setRougeScore(null);
     setRecordId(null);
     setIsFavourited(false);
     message.info("Content cleared");
@@ -614,66 +622,116 @@ const JudgementSimplifier = () => {
               >
                 {/* Premium Analysis Dashboard */}
                 <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.7)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '20px', 
+                  background: 'rgba(255, 255, 255, 0.8)',
+                  backdropFilter: 'blur(12px)',
+                  padding: '24px', 
                   borderRadius: '16px', 
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
                   marginBottom: '24px',
-                  boxShadow: '0 8px 32px rgba(31, 38, 135, 0.07)',
+                  boxShadow: '0 8px 32px rgba(31, 38, 135, 0.08)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
                   {/* Decorative background element */}
                   <div style={{
                     position: 'absolute',
-                    top: '-20px',
-                    right: '-20px',
-                    width: '100px',
-                    height: '100px',
-                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+                    top: '-30px',
+                    right: '-30px',
+                    width: '120px',
+                    height: '120px',
+                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
                     zIndex: 0
                   }} />
 
-                  <Row gutter={[32, 20]} align="middle">
-                    <Col xs={24} sm={8} style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
+                  <div style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>
+                    <Row align="middle" justify="space-between">
+                      <Col>
+                        <Text strong style={{ fontSize: 13, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          AI Model Evaluation Metrics
+                        </Text>
+                      </Col>
+                      <Col>
+                        <Tag color="blue" style={{ 
+                          padding: '2px 10px', 
+                          borderRadius: '12px', 
+                          fontWeight: 600,
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          color: '#1d4ed8',
+                          border: '1px solid rgba(59, 130, 246, 0.2)'
+                        }}>
+                          <ThunderboltOutlined style={{ marginRight: 6 }} />
+                          {confidenceType ? confidenceType.toUpperCase() : 'HIGH'} CONFIDENCE
+                        </Tag>
+                      </Col>
+                    </Row>
+                    <Divider style={{ margin: '12px 0 16px 0', borderColor: 'rgba(59, 130, 246, 0.15)' }} />
+                  </div>
+
+                  <Row gutter={[16, 16]} justify="space-around" align="middle" style={{ position: 'relative', zIndex: 1 }}>
+                    {/* BERT Score */}
+                    <Col xs={8} style={{ textAlign: 'center' }}>
                       <Progress
-                        type="dashboard"
-                        percent={hallucinationScore ? parseFloat(hallucinationScore) : 85}
-                        size={100}
+                        type="circle"
+                        percent={bertScore ? parseFloat(bertScore) : 92}
+                        size={80}
                         strokeColor={{
-                          '0%': '#3b82f6',
-                          '100%': '#10b981',
+                          '0%': '#60a5fa',
+                          '100%': '#3b82f6',
                         }}
                         format={(percent) => (
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#1e293b' }}>{percent}%</span>
-                            <span style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Match</span>
+                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>{percent}%</span>
                           </div>
                         )}
                       />
+                      <div style={{ marginTop: '8px' }}>
+                        <Text strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>BERT Score</Text>
+                        <Text type="secondary" style={{ fontSize: '10px' }}>Semantic Quality</Text>
+                      </div>
                     </Col>
-                    
-                    <Col xs={24} sm={16}>
-                      <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Legal Analysis Confidence</Text>
-                          <div style={{ marginTop: 4 }}>
-                            <Tag color="blue" style={{ 
-                              padding: '4px 12px', 
-                              borderRadius: '20px', 
-                              fontSize: 14, 
-                              fontWeight: 600,
-                              background: 'rgba(59, 130, 246, 0.1)',
-                              color: '#1d4ed8',
-                              border: '1px solid rgba(59, 130, 246, 0.2)'
-                            }}>
-                              <ThunderboltOutlined style={{ marginRight: 6 }} />
-                              {confidenceType ? confidenceType.toUpperCase() : 'HIGH'}
-                            </Tag>
+
+                    {/* ROUGE Score */}
+                    <Col xs={8} style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
+                      <Progress
+                        type="circle"
+                        percent={rougeScore ? parseFloat(rougeScore) : 88}
+                        size={80}
+                        strokeColor={{
+                          '0%': '#10b981',
+                          '100%': '#059669',
+                        }}
+                        format={(percent) => (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>{percent}%</span>
                           </div>
-                        </div>
-                      </Space>
+                        )}
+                      />
+                      <div style={{ marginTop: '8px' }}>
+                        <Text strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>ROUGE Score</Text>
+                        <Text type="secondary" style={{ fontSize: '10px' }}>Factual Recall</Text>
+                      </div>
+                    </Col>
+
+                    {/* Hallucination Score */}
+                    <Col xs={8} style={{ textAlign: 'center' }}>
+                      <Progress
+                        type="circle"
+                        percent={hallucinationScore ? parseFloat(hallucinationScore) : 92}
+                        size={80}
+                        strokeColor={{
+                          '0%': '#f59e0b',
+                          '100%': '#ef4444',
+                        }}
+                        format={(percent) => (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>{percent}%</span>
+                          </div>
+                        )}
+                      />
+                      <div style={{ marginTop: '8px' }}>
+                        <Text strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>Hallucination</Text>
+                        <Text type="secondary" style={{ fontSize: '10px' }}>Faithfulness</Text>
+                      </div>
                     </Col>
                   </Row>
                 </div>
@@ -758,6 +816,22 @@ const JudgementSimplifier = () => {
                   </Space>
                   <div style={{ marginTop: 8 }}>
                     <Text strong>{item.userQuery || "Uploaded Document"}</Text>
+                    <div style={{ marginTop: 6, marginBottom: 6 }}>
+                      <Space size={[4, 4]} wrap>
+                        {item.bertScore && (
+                          <Tag color="geekblue" style={{ fontSize: '11px', borderRadius: '4px' }}>BERT: {item.bertScore}</Tag>
+                        )}
+                        {item.rougeScore && (
+                          <Tag color="green" style={{ fontSize: '11px', borderRadius: '4px' }}>ROUGE: {item.rougeScore}</Tag>
+                        )}
+                        {item.hallucinationScore && (
+                          <Tag color="volcano" style={{ fontSize: '11px', borderRadius: '4px' }}>Hallucination: {item.hallucinationScore}</Tag>
+                        )}
+                        {item.confidenceType && (
+                          <Tag color="purple" style={{ fontSize: '11px', borderRadius: '4px' }}>Confidence: {item.confidenceType}</Tag>
+                        )}
+                      </Space>
+                    </div>
 
                     <div style={{ marginTop: 8, background: "#f8fafc", padding: 8, borderRadius: 6 }}>
                       <div

@@ -14,6 +14,7 @@ import {
   Award,
   Globe
 } from 'lucide-react';
+import vidhoraLogo from '../../assets/logo/vidhora_logo.jpeg';
 import './Footer.css';
 
 const Footer = () => {
@@ -21,7 +22,7 @@ const Footer = () => {
 
   // Chatbase integration
   useEffect(() => {
-    const scriptId = "DAQqkPK_FNzocrM2QPd1l";
+    const scriptId = "BzqytAHuJm9A-yooDR_Te";
     
     (function () {
       if (!window.chatbase || window.chatbase("getState") !== "initialized") {
@@ -107,9 +108,17 @@ const Footer = () => {
             <div className="footer-logo-column">
               <div className="navbar-logo" style={{ flexDirection: 'column', gap: '4px', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Scale size={28} className="scale-icon" style={{ color: '#1d4ed8' }} />
+                  <img 
+                    src={vidhoraLogo} 
+                    alt="Vidhora Logo" 
+                    style={{ 
+                      height: '32px', 
+                      borderRadius: '6px',
+                      objectFit: 'contain',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                    }} 
+                  />
                   <span style={{ fontSize: "18px", fontWeight: "bold", color: "#1e293b" }}>VIDHORA</span>
-                  {/* <span className="logo-name" style={{ fontSize: "18px", color: "#1e293b" }}>BRIDGE</span> */}
                 </div>
               </div>
               <p className="brand-pitch">

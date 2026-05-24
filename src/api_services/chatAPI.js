@@ -91,9 +91,6 @@ const cleanReply = (raw) => {
   // Convert setext-style "**Title**\n======" into "## Title"
   text = text.replace(/\*\*(.+?)\*\*\s*\n[=\-]{2,}/g, (_, title) => `## ${title}`);
 
-  // Strip trailing ** at the end of ANY line (global + multiline)
-  text = text.replace(/\*{1,2}\s*$/gm, "");
-
   // Strip leading stray * or **
   text = text.replace(/^(\*\*|\*)\s*\n*/, "");
   text = text.replace(/\n{3,}/g, "\n\n").trim();
