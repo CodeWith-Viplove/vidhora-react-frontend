@@ -82,15 +82,15 @@ const Navbar = () => {
     <Header className={`${isApp ? "app-navbar" : "premium-navbar"} ${scrolled ? "scrolled" : ""}`}>
       <div className="navbar-left">
         <div className="navbar-logo" onClick={() => navigate(isApp ? '/app/dashboard' : '/')}>
-          <img 
-            src={vidhoraLogo} 
-            alt="Vidhora Logo" 
-            style={{ 
-              height: isApp ? '32px' : '40px', 
+          <img
+            src={vidhoraLogo}
+            alt="Vidhora Logo"
+            style={{
+              height: isApp ? '32px' : '40px',
               borderRadius: '8px',
               objectFit: 'contain',
               boxShadow: '0 2px 10px rgba(0, 0, 0, 0.12)'
-            }} 
+            }}
           />
           <span className={isApp ? "logo-text-app" : "logo-text"}>VIDHORA AI</span>
         </div>
