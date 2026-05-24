@@ -223,9 +223,11 @@ const LoginPage = () => {
                   height: '64px', 
                   borderRadius: '12px',
                   objectFit: 'contain',
-                  boxShadow: '0 4px 15px rgba(30, 78, 216, 0.15)'
+                  // boxShadow: '0 4px 15px rgba(30, 78, 216, 0.15)'
                 }} 
               />
+
+              <h5 style={{ color: 'var(--color-primary)!important' }}>Vidhora AI Assistant</h5>
             </div>
           </div>
 
@@ -442,7 +444,7 @@ const LoginPage = () => {
               {[
                 { title: "Simplify", description: "complex legal language with AI-powered summaries" },
                 { title: "Summarize", description: "court judgments instantly for quick understanding" },
-                { title: "Multi-language support", description: "Access legal resources in various languages" }
+                { title: "Legal AI Chatbot", description: "Get instant answers to your legal questions" }
               ].map((feature, index) => (
                 <div key={index} className="feature1-item">
                   <div className="bullet1-point"></div>

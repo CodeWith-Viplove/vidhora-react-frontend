@@ -89,10 +89,10 @@ const Navbar = () => {
               height: isApp ? '32px' : '40px',
               borderRadius: '8px',
               objectFit: 'contain',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.12)'
+              // boxShadow: '0 2px 10px rgba(0, 0, 0, 0.12)'
             }}
           />
-          <span className={isApp ? "logo-text-app" : "logo-text"}>VIDHORA AI</span>
+          <span className={isApp ? "logo-text-app" : "logo-text"}>Vidhora AI Assistant</span>
         </div>
       </div>
 

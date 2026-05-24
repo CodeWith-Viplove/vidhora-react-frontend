@@ -88,7 +88,7 @@ const Sidebar = ({ activeItem, onNavigate, onToggle, isCollapsed }) => {
     //   icon: FileText
     // },
     {
-      name: 'Vidhora Chatbot',
+      name: 'Vidhora AI Chatbot',
       icon: MessageSquare
     }
   ];

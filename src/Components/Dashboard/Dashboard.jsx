@@ -295,7 +295,7 @@ const Dashboard = ({ onNavigate }) => {
           }}
         >
           <AntTitle level={2} style={{ margin: '0 0 8px 0', background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Welcome to VIDHORA Dashboard{user.name && `, ${user.name.split(' ')[0]}`}
+            Welcome to Vidhora AI Assistant Dashboard{user.name && `, ${user.name.split(' ')[0]}`}
           </AntTitle>
           <Text style={{ fontSize: 16, color: '#1d4ed8' }}>
             Transform complex legal language into simple, understandable text with AI-powered tools
@@ -520,7 +520,7 @@ const Dashboard = ({ onNavigate }) => {
           }}
         >
           <Paragraph style={{ margin: 0, color: '#64748b' }}>
-            <Text strong>Disclaimer:</Text> <b>VIDHORA</b> is a legal assistance tool and is not a replacement for professional legal advice. Always consult with a qualified attorney for important legal matters.
+            <Text strong>Disclaimer:</Text> <b>Vidhora AI Assistant</b> is a legal assistance tool and is not a replacement for professional legal advice. Always consult with a qualified attorney for important legal matters.
           </Paragraph>
         </Card>
       </Content>

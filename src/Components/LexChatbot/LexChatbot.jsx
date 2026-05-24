@@ -362,7 +362,7 @@ const LexChatbot = () => {
               />
               <div>
                 <Title level={5} style={{ margin: 0 }}>
-                  VIDHORA Legal Assistant
+                  Vidhora AI Assistant
                 </Title>
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   Trusted legal guidance powered by AI
@@ -490,7 +490,7 @@ const LexChatbot = () => {
                             {msg.hallucinationScore && (
                               <Tag color="volcano" style={{ borderRadius: '12px', padding: '2px 8px', fontSize: '11px', border: '1px solid rgba(245, 34, 45, 0.15)', margin: 0 }}>
                                 <InfoCircleOutlined style={{ marginRight: '4px' }} />
-                                Hallucination: <strong>{msg.hallucinationScore}</strong>
+                                Confidence Score: <strong>{msg.hallucinationScore}</strong>
                               </Tag>
                             )}
                           </div>

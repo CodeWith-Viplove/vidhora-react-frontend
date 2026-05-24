@@ -625,14 +625,14 @@ const LawSimplifier = () => {
                   background: 'rgba(255, 255, 255, 0.8)',
                   backdropFilter: 'blur(12px)',
                   padding: '24px', 
-                  borderRadius: '16px', 
-                  border: '1px solid rgba(139, 92, 246, 0.25)',
+                  // borderRadius: '16px', 
+                  // border: '1px solid rgba(139, 92, 246, 0.25)',
                   marginBottom: '24px',
-                  boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
+                  // boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
-                  {/* Decorative background element */}
+                  {/* Decorative background element
                   <div style={{
                     position: 'absolute',
                     top: '-30px',
@@ -641,7 +641,7 @@ const LawSimplifier = () => {
                     height: '120px',
                     background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
                     zIndex: 0
-                  }} />
+                  }} /> */}
 
                   <div style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>
                     <Row align="middle" justify="space-between">
@@ -729,7 +729,7 @@ const LawSimplifier = () => {
                         )}
                       />
                       <div style={{ marginTop: '8px' }}>
-                        <Text strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>Hallucination</Text>
+                        <Text strong style={{ fontSize: '12px', color: '#475569', display: 'block' }}>Confidence Score </Text>
                         <Text type="secondary" style={{ fontSize: '10px' }}>Faithfulness</Text>
                       </div>
                     </Col>

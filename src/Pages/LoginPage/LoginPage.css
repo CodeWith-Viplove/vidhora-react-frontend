@@ -65,7 +65,9 @@
 .logo-container {
   display: flex;
   align-items: center;
+  flex-direction: column;
   gap: 12px;
+  color: var(--color-primary)!important;
 }
 
 .scale-icon {

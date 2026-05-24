@@ -73,7 +73,7 @@ function MainApp() {
     {
       key: 'lex-chatbot',
       icon: <MessageOutlined />,
-      label: 'Vidhora Chatbot',
+      label: 'Vidhora AI Chatbot',
     },
   ];
 
