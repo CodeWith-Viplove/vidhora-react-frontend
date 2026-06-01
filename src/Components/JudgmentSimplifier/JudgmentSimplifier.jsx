@@ -14,6 +14,13 @@ import {
   HistoryOutlined,
   StarOutlined,
   StarFilled,
+  DownOutlined,
+  UpOutlined,
+  DatabaseOutlined,
+  CheckCircleOutlined,
+  WarningOutlined,
+  DashboardOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import {
   Card,
@@ -49,6 +56,194 @@ import { saveAs } from "file-saver";
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
+const formatMarkdownText = (text) => {
+  if (!text) return "";
+  
+  let formatted = text;
+  
+  // 1) Replace known section headers with clean markdown headings and proper spacing
+  const headers = [
+    "Brief Summary",
+    "Facts",
+    "Evidence Submitted",
+    "Issues",
+    "Reasoning",
+    "Ruling",
+    "Simplified Hindi"
+  ];
+  
+  headers.forEach(header => {
+    const regex = new RegExp(`(?:\\*\\*)?\\b${header}\\b(?:\\*\\*)?\\s*[:\\-]?\\s*`, 'gi');
+    formatted = formatted.replace(regex, `\n\n### ${header}\n\n`);
+  });
+  
+  // 2) Replace circular bullets (and other bullet chars) with a newline and markdown list item syntax (* )
+  formatted = formatted.replace(/[\u25CF\u2022\u26AB\u26AA\u25E6]/g, "\n* ");
+  
+  // 3) Split the text by newline to clean up spacing and construct the final markdown
+  const lines = formatted.split('\n');
+  const processed = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line) {
+      processed.push(line);
+    }
+  }
+  
+  // 4) Intelligently join lines: single newline for consecutive list items (for tight list style),
+  // and double newlines for other blocks/paragraphs.
+  let finalMarkdown = "";
+  for (let i = 0; i < processed.length; i++) {
+    const current = processed[i];
+    const prev = i > 0 ? processed[i - 1] : "";
+    
+    if (i === 0) {
+      finalMarkdown += current;
+    } else {
+      const isCurrentListItem = current.startsWith('*') || /^\d+\./.test(current);
+      const isPrevListItem = prev.startsWith('*') || /^\d+\./.test(prev);
+      
+      if (isCurrentListItem && isPrevListItem) {
+        finalMarkdown += "\n" + current;
+      } else {
+        finalMarkdown += "\n\n" + current;
+      }
+    }
+  }
+  
+  return finalMarkdown.trim();
+};
+
+const formatResetTime = (timeStr, type = "time") => {
+  if (!timeStr) return "";
+  try {
+    const date = new Date(timeStr);
+    if (isNaN(date.getTime())) return timeStr;
+    if (type === "time") {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    return date.toLocaleDateString([], { month: "short", day: "numeric" }) + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    return timeStr;
+  }
+};
+
+const formatTokenCount = (num) => {
+  if (num === null || num === undefined) return "Unlimited";
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + "K";
+  }
+  return num.toString();
+};
+
+const parseTokenCount = (val) => {
+  if (val === null || val === undefined) return null;
+  let str = val.toString().replace(/,/g, '').trim().toUpperCase();
+  let multiplier = 1;
+  if (str.endsWith('K')) {
+    multiplier = 1000;
+    str = str.slice(0, -1);
+  } else if (str.endsWith('M')) {
+    multiplier = 1000000;
+    str = str.slice(0, -1);
+  }
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? null : parsed * multiplier;
+};
+
+const renderEngineStatus = (modelQuota) => {
+  if (!modelQuota) return null;
+  
+  const remaining = parseTokenCount(modelQuota.remaining?.tokens);
+  const isLow = remaining !== null && remaining !== undefined && remaining < 1500;
+  
+  let statusBg = '#f0fdf4';
+  let statusBorder = '#dcfce7';
+  let statusIcon = <CheckCircleOutlined style={{ color: '#10b981', fontSize: '18px' }} />;
+  let title = 'Systems Operational';
+  let description = 'Service is healthy. Ready for your next query.';
+  
+  if (modelQuota.exhausted) {
+    statusBg = '#fef2f2';
+    statusBorder = '#fee2e2';
+    statusIcon = <CloseCircleOutlined style={{ color: '#ef4444', fontSize: '18px' }} />;
+    title = 'Daily Limit Reached';
+    description = modelQuota.warningMessage || 'You have exhausted your daily limit. Please try again tomorrow.';
+  } else if (isLow || modelQuota.quotaWarning) {
+    statusBg = '#fffbeb';
+    statusBorder = '#fef3c7';
+    statusIcon = <WarningOutlined style={{ color: '#f59e0b', fontSize: '18px' }} />;
+    title = 'Quota Running Low';
+    description = isLow 
+      ? `Token count is extremely low (${formatTokenCount(remaining)} left). Next request may be blocked.` 
+      : (modelQuota.warningMessage || 'You are approaching your daily request limit.');
+  } else if (!modelQuota.canMakeNextRequest) {
+    statusBg = '#fff7ed';
+    statusBorder = '#ffedd5';
+    statusIcon = <WarningOutlined style={{ color: '#f97316', fontSize: '18px' }} />;
+    title = 'Cooling Down';
+    description = 'API rate limit exceeded. Please wait a moment before sending another query.';
+  }
+
+  return (
+    <div 
+      style={{
+        borderRadius: '8px', 
+        border: `1px solid ${statusBorder}`, 
+        background: statusBg, 
+        padding: '10px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: '4px',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+      }}
+    >
+      {statusIcon}
+      <div style={{ fontWeight: 600, fontSize: '11px', color: '#1e293b' }}>
+        {title}
+      </div>
+      <div style={{ fontSize: '9px', color: '#64748b', lineHeight: '1.4' }}>
+        {description}
+      </div>
+    </div>
+  );
+};
+
+const DEFAULT_QUOTA = {
+  quota: {
+    limits: { perDay: 50, perMinute: 5 },
+    used: { perDay: 0, perMinute: 0 },
+    remaining: { perDay: 50, perMinute: 5 }
+  },
+  modelQuota: {
+    provider: "gemini",
+    model: "gemini-3.5-flash",
+    exhausted: false,
+    quotaWarning: false,
+    canMakeNextRequest: true,
+    limits: {
+      requests: 50,
+      tokens: 1000000,
+      perMinute: 5,
+      perDay: 50,
+      tokensPerMinute: 1000000,
+      tokensPerDay: 1000000
+    },
+    remaining: {
+      requests: 50,
+      tokens: 1000000
+    }
+  }
+};
+
 const JudgementSimplifier = () => {
   const [inputText, setInputText] = useState("");
   const [outputText, setOutputText] = useState("");
@@ -68,6 +263,14 @@ const JudgementSimplifier = () => {
   const [confidenceType, setConfidenceType] = useState("");
   const [bertScore, setBertScore] = useState(null);
   const [rougeScore, setRougeScore] = useState(null);
+  const [lastKnownQuota, setLastKnownQuota] = useState(() => {
+    try {
+      const saved = localStorage.getItem("lastKnownQuota");
+      return saved ? JSON.parse(saved) : DEFAULT_QUOTA;
+    } catch (e) {
+      return DEFAULT_QUOTA;
+    }
+  });
 
   const toggleExpand = (itemId) => {
     setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -127,13 +330,18 @@ const JudgementSimplifier = () => {
 
       const res = await judgmentSimplifier(formData);
 
-      setOutputText(res.simplifiedText);
+      setOutputText(formatMarkdownText(res.simplifiedText));
       if (res.hallucinationScore) setHallucinationScore(res.hallucinationScore);
       if (res.confidenceType) setConfidenceType(res.confidenceType);
       if (res.bertScore) setBertScore(res.bertScore);
       if (res.rougeScore) setRougeScore(res.rougeScore);
       if (res.recordId) setRecordId(res.recordId);
       if (typeof res.isLiked !== 'undefined') setIsFavourited(res.isLiked);
+      if (res.quota || res.modelQuota) {
+        const quotaInfo = { quota: res.quota, modelQuota: res.modelQuota };
+        setLastKnownQuota(quotaInfo);
+        localStorage.setItem("lastKnownQuota", JSON.stringify(quotaInfo));
+      }
       message.success("Judgment simplified successfully!");
       fetchHistory();
     } catch (error) {
@@ -411,16 +619,133 @@ const JudgementSimplifier = () => {
         </Row>
       </Card>
 
-      {/* Info Alert */}
-      <Alert
-        message="Pro Tip"
-        description="For best results, provide complete judgments or case details. The AI works better with full context."
-        type="info"
-        icon={<InfoCircleOutlined />}
-        showIcon
-        closable
-        style={{ marginBottom: 24, borderRadius: 6 }}
-      />
+      {/* Usage & Limits Panel (in place of Pro Tip) */}
+      {lastKnownQuota && (
+        <>
+          {/* Low Token Warning Alert */}
+          {(() => {
+            const remaining = parseTokenCount(lastKnownQuota.modelQuota?.remaining?.tokens);
+            const isLow = remaining !== null && remaining !== undefined && remaining < 1500;
+            if (!isLow) return null;
+            return (
+              <Alert
+                message={
+                  <span style={{ fontWeight: 700, color: '#c2410c' }}>
+                    Attention: Token Quota Almost Exhausted
+                  </span>
+                }
+                description={`Your remaining token count is extremely low (${formatTokenCount(remaining)} tokens left). You may not be able to successfully complete your next request because the system token limit is almost exhausted.`}
+                type="warning"
+                showIcon
+                style={{
+                  marginBottom: 24,
+                  borderRadius: 12,
+                  border: '1px solid #ffedd5',
+                  background: '#fff7ed',
+                  boxShadow: '0 4px 15px rgba(249, 115, 22, 0.08)'
+                }}
+              />
+            );
+          })()}
+
+          {(() => {
+            const limit = lastKnownQuota.modelQuota?.limits?.tokensPerDay || lastKnownQuota.modelQuota?.limits?.tokens;
+            const remaining = lastKnownQuota.modelQuota?.remaining?.tokens;
+
+            const parsedLimit = parseTokenCount(limit) ?? 6000;
+            const parsedRemaining = parseTokenCount(remaining) ?? 0;
+            const isLow = parsedRemaining !== null && parsedRemaining !== undefined && parsedRemaining < 1500;
+
+            const limitDailyRequests = lastKnownQuota.quota?.limits?.perDay ?? 50;
+            const remainingDailyRequests = lastKnownQuota.quota?.remaining?.perDay ?? 0;
+
+            return (
+              <Card
+                style={{
+                  marginBottom: 24,
+                  borderRadius: 12,
+                  border: '1px solid #e2e8f0',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                }}
+                bodyStyle={{ padding: '12px 20px' }}
+              >
+                <Row align="middle" justify="space-between" gutter={[16, 8]}>
+                  {/* Label / Dashboard Icon */}
+                  <Col xs={24} sm={6} md={5}>
+                    <Space size={8}>
+                      <DashboardOutlined style={{ color: '#1d4ed8', fontSize: '15px' }} />
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>
+                        Usage & Limits
+                      </span>
+                    </Space>
+                  </Col>
+
+                  {/* Daily Requests */}
+                  <Col xs={12} sm={6} md={5}>
+                    <Space size={6}>
+                      <ThunderboltOutlined style={{ color: '#3b82f6', fontSize: '13px' }} />
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>Requests:</span>
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>
+                        {remainingDailyRequests} / {limitDailyRequests} left
+                      </span>
+                    </Space>
+                  </Col>
+
+                  {/* Tokens Remaining */}
+                  <Col xs={12} sm={6} md={5}>
+                    <Space size={6}>
+                      <DatabaseOutlined style={{ color: '#10b981', fontSize: '13px' }} />
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>Tokens:</span>
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: isLow ? '#ef4444' : '#10b981' }}>
+                        {formatTokenCount(parsedRemaining)} / {formatTokenCount(parsedLimit)} left
+                      </span>
+                    </Space>
+                  </Col>
+
+                  {/* Reset Time */}
+                  {lastKnownQuota.quota?.resetAt?.perDay && (
+                    <Col xs={12} sm={6} md={5}>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>Resets at: </span>
+                      <span style={{ fontWeight: 600, fontSize: '12px', color: '#475569' }}>
+                        {formatResetTime(lastKnownQuota.quota.resetAt.perDay, 'time')}
+                      </span>
+                    </Col>
+                  )}
+
+                  {/* Health Status Badge */}
+                  <Col xs={12} sm={6} md={4} style={{ textAlign: 'right' }}>
+                    {(() => {
+                      let badgeStatus = "success";
+                      let badgeText = "Systems Operational";
+                      if (lastKnownQuota.modelQuota?.exhausted) {
+                        badgeStatus = "error";
+                        badgeText = "Limit Reached";
+                      } else if (isLow || lastKnownQuota.modelQuota?.quotaWarning) {
+                        badgeStatus = "warning";
+                        badgeText = "Quota Low";
+                      } else if (!lastKnownQuota.modelQuota?.canMakeNextRequest) {
+                        badgeStatus = "warning";
+                        badgeText = "Cooling Down";
+                      }
+                      return (
+                        <Badge 
+                          status={badgeStatus} 
+                          text={
+                            <span style={{ fontWeight: 600, fontSize: '12px', color: '#334155' }}>
+                              {badgeText}
+                            </span>
+                          } 
+                        />
+                      );
+                    })()}
+                  </Col>
+                </Row>
+              </Card>
+            );
+          })()}
+        </>
+      )}
 
       {/* Main Content Grid */}
       <Row gutter={[24, 24]}>
@@ -747,25 +1072,28 @@ const JudgementSimplifier = () => {
                     overflowY: "auto",
                   }}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left', fontSize: '18px', fontWeight: 600, marginTop: '16px', marginBottom: '12px', color: '#1e293b' }} {...props} />,
-                      h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left', fontSize: '16px', fontWeight: 600, marginTop: '14px', marginBottom: '10px', color: '#1e293b' }} {...props} />,
-                      h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', fontSize: '15px', fontWeight: 600, marginTop: '12px', marginBottom: '8px', color: '#1e293b' }} {...props} />,
-                      h4: ({ node, ...props }) => <h4 style={{ textAlign: 'left', fontSize: '14px', fontWeight: 600, marginTop: '10px', marginBottom: '6px', color: '#1e293b' }} {...props} />,
-                      p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginTop: '4px', marginBottom: '8px', color: '#334155' }} {...props} />,
-                      ul: ({ node, ...props }) => <ul style={{ marginLeft: '20px', paddingLeft: '0px', color: '#334155' }} {...props} />,
-                      ol: ({ node, ...props }) => <ol style={{ marginLeft: '20px', paddingLeft: '0px', color: '#334155' }} {...props} />,
-                      li: ({ node, ...props }) => <li style={{ marginBottom: '4px', paddingLeft: '0px', color: '#334155' }} {...props} />,
-                    }}
-                    style={{
-                      fontSize: 15,
-                      lineHeight: 1.8,
-                    }}
-                  >
-                    {streamingOutputText}
-                  </ReactMarkdown>
+                  <div style={{ color: '#000000' }}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left', fontSize: '18px', fontWeight: 'bold', marginTop: '16px', marginBottom: '12px', color: '#000000' }} {...props} />,
+                        h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left', fontSize: '16px', fontWeight: 'bold', marginTop: '14px', marginBottom: '10px', color: '#000000' }} {...props} />,
+                        h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', fontSize: '15px', fontWeight: 'bold', marginTop: '12px', marginBottom: '8px', color: '#000000' }} {...props} />,
+                        h4: ({ node, ...props }) => <h4 style={{ textAlign: 'left', fontSize: '14px', fontWeight: 'bold', marginTop: '10px', marginBottom: '6px', color: '#000000' }} {...props} />,
+                        p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginTop: '4px', marginBottom: '8px', color: '#000000', lineHeight: '1.6' }} {...props} />,
+                        ul: ({ node, ...props }) => <ul style={{ marginLeft: '20px', paddingLeft: '0px', color: '#000000' }} {...props} />,
+                        ol: ({ node, ...props }) => <ol style={{ marginLeft: '20px', paddingLeft: '0px', color: '#000000' }} {...props} />,
+                        li: ({ node, ...props }) => <li style={{ marginBottom: '4px', paddingLeft: '0px', color: '#000000', lineHeight: '1.6' }} {...props} />,
+                        strong: ({ node, ...props }) => <strong style={{ color: '#000000', fontWeight: 'bold' }} {...props} />
+                      }}
+                      style={{
+                        fontSize: 15,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      {streamingOutputText}
+                    </ReactMarkdown>
+                  </div>
                 </Card>
 
                 {/* Action Buttons */}
@@ -850,17 +1178,18 @@ const JudgementSimplifier = () => {
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left', fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }} {...props} />,
-                            h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left', fontSize: '16px', fontWeight: 'bold', marginBottom: '6px' }} {...props} />,
-                            h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', marginTop: '12px', marginBottom: '4px', fontSize: '14px', fontWeight: 'bold' }} {...props} />,
-                            ul: ({ node, ...props }) => <ul style={{ textAlign: 'left', marginLeft: '20px', paddingLeft: '0px', marginBottom: '8px' }} {...props} />,
-                            ol: ({ node, ...props }) => <ol style={{ textAlign: 'left', marginLeft: '20px', paddingLeft: '0px', marginBottom: '8px' }} {...props} />,
-                            p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginBottom: '8px', lineHeight: '1.6' }} {...props} />,
-                            li: ({ node, ...props }) => <li style={{ textAlign: 'left', marginBottom: '4px' }} {...props} />,
+                            h1: ({ node, ...props }) => <h1 style={{ textAlign: 'left', fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#000000' }} {...props} />,
+                            h2: ({ node, ...props }) => <h2 style={{ textAlign: 'left', fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: '#000000' }} {...props} />,
+                            h3: ({ node, ...props }) => <h3 style={{ textAlign: 'left', marginTop: '12px', marginBottom: '4px', fontSize: '14px', fontWeight: 'bold', color: '#000000' }} {...props} />,
+                            ul: ({ node, ...props }) => <ul style={{ textAlign: 'left', marginLeft: '20px', paddingLeft: '0px', marginBottom: '8px', color: '#000000' }} {...props} />,
+                            ol: ({ node, ...props }) => <ol style={{ textAlign: 'left', marginLeft: '20px', paddingLeft: '0px', marginBottom: '8px', color: '#000000' }} {...props} />,
+                            p: ({ node, ...props }) => <p style={{ textAlign: 'left', marginBottom: '8px', lineHeight: '1.6', color: '#000000' }} {...props} />,
+                            li: ({ node, ...props }) => <li style={{ textAlign: 'left', marginBottom: '4px', color: '#000000', lineHeight: '1.6' }} {...props} />,
+                            strong: ({ node, ...props }) => <strong style={{ color: '#000000', fontWeight: 'bold' }} {...props} />
                           }}
-                          style={{ fontSize: 13, color: "#475569" }}
+                          style={{ fontSize: 13, color: "#000000" }}
                         >
-                          {item.aiResponse}
+                          {formatMarkdownText(item.aiResponse)}
                         </ReactMarkdown>
                       </div>
                       <Button
